@@ -1,19 +1,26 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
 
-const initialPlayers = {
-  გიორგი: { score: 0, avatar: "🧑‍💼", badges: [] },
-  ნინო: { score: 0, avatar: "👩‍💻", badges: [] },
-  ლუკა: { score: 0, avatar: "👨‍⚖️", badges: [] }
-};
+const avatarOptions = [
+  "🧑‍💼", "👩‍💻", "👨‍⚖️", "🦸‍♂️", "🦸‍♀️", "🧑‍🎨", "🧑‍🚀", "🧑‍🔬", "🧑‍🏫", "🧑‍🌾", "🧑‍🍳", "🧑‍🎤"
+];
 
 
 
 const badgeMilestones = [50, 100, 150];
 
+
 export default function App() {
-  const [players, setPlayers] = useState(initialPlayers);
+  // Onboarding state
+  const [onboarding, setOnboarding] = useState(true);
+  const [playerInputs, setPlayerInputs] = useState([
+    { name: "", avatar: avatarOptions[0] },
+    { name: "", avatar: avatarOptions[1] },
+    { name: "", avatar: avatarOptions[2] }
+  ]);
+  const [players, setPlayers] = useState({});
   const [log, setLog] = useState([]);
   const [docText, setDocText] = useState("");
   const [docName, setDocName] = useState("");
@@ -172,8 +179,74 @@ export default function App() {
     window.getSelection().removeAllRanges();
   };
 
+
   const sortedPlayers = Object.entries(players).sort((a, b) => b[1].score - a[1].score);
   const maxScore = Math.max(...Object.values(players).map(p => p.score), 100);
+
+  // Onboarding submit handler
+  const handleOnboardingSubmit = (e) => {
+    e.preventDefault();
+    // Filter out empty names, max 3
+    const filtered = playerInputs.filter(p => p.name.trim() !== "").slice(0, 3);
+    if (filtered.length === 0) {
+      alert("Please enter at least one player name.");
+      return;
+    }
+    // Check for duplicate names
+    const names = filtered.map(p => p.name.trim());
+    if (new Set(names).size !== names.length) {
+      alert("Player names must be unique.");
+      return;
+    }
+    // Build players object
+    const newPlayers = {};
+    filtered.forEach(p => {
+      newPlayers[p.name.trim()] = { score: 0, avatar: p.avatar, badges: [] };
+    });
+    setPlayers(newPlayers);
+    setOnboarding(false);
+  };
+
+  // Onboarding UI
+  if (onboarding) {
+    return (
+      <div className="p-6 font-sans max-w-xl mx-auto flex flex-col items-center justify-center min-h-screen">
+        <h1 className="text-3xl font-bold mb-4">🎮 ContractRiskBot Setup</h1>
+        <form onSubmit={handleOnboardingSubmit} className="w-full flex flex-col gap-4">
+          {[0,1,2].map(i => (
+            <div key={i} className="flex items-center gap-3">
+              <input
+                type="text"
+                placeholder={`Player ${i+1} Name`}
+                maxLength={16}
+                className="border rounded p-2 flex-1"
+                value={playerInputs[i].name}
+                onChange={e => {
+                  const arr = [...playerInputs];
+                  arr[i].name = e.target.value;
+                  setPlayerInputs(arr);
+                }}
+              />
+              <select
+                className="border rounded p-2 text-2xl bg-white"
+                value={playerInputs[i].avatar}
+                onChange={e => {
+                  const arr = [...playerInputs];
+                  arr[i].avatar = e.target.value;
+                  setPlayerInputs(arr);
+                }}
+              >
+                {avatarOptions.map(av => (
+                  <option key={av} value={av}>{av}</option>
+                ))}
+              </select>
+            </div>
+          ))}
+          <button type="submit" className="btn btn-primary mt-2">Start Game</button>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 font-sans max-w-3xl mx-auto">
@@ -215,9 +288,10 @@ export default function App() {
               <button
                 key={player}
                 onClick={() => handleSelectionClick(player)}
-                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-2"
               >
-                {player}-ს ქულა მონიშვნაზე
+                <span>{players[player].avatar}</span>
+                <span>{player}-ს ქულა მონიშვნაზე</span>
               </button>
             ))}
           </div>
