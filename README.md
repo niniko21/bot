@@ -1,26 +1,63 @@
-ContractRiskBot — Gamified Live Review Demo
-===============================================
+# ContractRiskBot — Gamified Contract Risk Review App  
 
-What this demo is:
-- A self-contained, client-side demo (static HTML + JS) that simulates a gamified live contract review session.
-- Load a contract (paste text or load sample), analyze/highlight clauses, join as players, start session, click clauses to claim, suggest redlines (right-click), and watch the avatar animate + leaderboard update.
-- It's intentionally offline & client-only so it's safe for hackathon/demo use and quick to present without backend dependencies.
+## 🎯 Overview  
+**ContractRiskBot** is a gamified, AI-powered web app for live contract risk review. Up to 3 players can join, upload or paste a contract, and compete to identify risky clauses. The app uses OpenAI to detect risks and awards points based on the severity of each risk found.  
 
-Files included:
-- index.html      -> Open this file in a modern browser (Chrome/Edge/Firefox).
-- README.md       -> This file.
+Perfect for hackathons, workshops, and demos — showcasing how legal tech and gamification can make contract review engaging and collaborative.  
 
-How to run:
-1. Download the zip file from this environment: contractriskbot_demo.zip
-2. Unzip it locally and open index.html in your browser OR run a simple local file server (optional):
-   - Python 3: `python -m http.server 8000` then open http://localhost:8000 in your browser
-3. Demo tips:
-   - Enter your name and click Join. Repeat in other browser windows to simulate other players.
-   - Click 'Load Sample Contract' and then 'Analyze & Highlight'.
-   - Click highlighted clauses to claim them (must Start Session first).
-   - Right-click a clause to propose a redline suggestion (awards points if suggestion looks good).
-   - Click 'Generate Session Report' to view a JSON summary.
+---
 
-Notes:
-- This is a front-end prototype for demo purposes. For production you'd add server-side logic, persistent storage, real NLP extraction, and secure auth.
-- If you want, I can extend this into a Flask/Node backend with real extraction and LLM integration next.
+## ✨ Features  
+
+- **👥 Multiplayer Setup** – Up to 3 players can enter names and choose avatars.  
+- **📄 Document Input** – Upload a contract file or paste text directly.  
+- **🤖 AI Risk Detection** – OpenAI analyzes the contract and flags risky clauses (e.g., Liability, Termination, Indemnification).  
+- **🎮 Gamified Scoring** – Players select risky text; points are awarded only if it matches AI-detected risks.  
+  - **High severity** → highest points  
+  - **Medium severity** → medium points  
+  - **Low severity** → fewer points  
+- **🏆 Leaderboard** – Real-time scores with avatars, milestones, and badges.  
+- **📝 Event Log** – Tracks each attempt, showing correct vs. incorrect calls.  
+- **🎉 Winner Reveal** – Celebratory animation at the end, plus a summary of all AI-detected risks.  
+- **💻 Modern UI** – Responsive, clean design with light/dark mode support.  
+
+---
+
+## 🚀 How to Run  
+
+1. **Install dependencies:**  
+   ```sh
+   npm install ```
+
+2. **Add your OpenAI API key
+Create a .env file in the project root and add:
+
+```VITE_OPENAI_API_KEY=your-openai-api-key```
+
+3. **Start the development server:
+
+```npm run dev```
+Open your browser at the local URL provided by Vite.
+
+## 🎲 How to Play
+
+1. Enter player names and choose avatars.
+2. Upload or paste a contract.
+3. Click **“Detect Risks with AI”** to analyze.
+4. Players take turns selecting risky clauses and clicking their **Claim** button.
+5. Correct selections earn points based on severity:
+   - **High severity** → highest points
+   - **Medium severity** → medium points
+   - **Low severity** → fewer points
+6. When all risks are found, click **“Reveal Answers”** to view AI results and crown the winner.
+
+---
+
+## 📝 Notes
+
+- This is a **front-end demo** designed for hackathons and workshops.
+- For production use, you would typically add:
+  - **Server-side logic** for handling uploads and scoring securely.
+  - **Persistent storage** (database) to save game progress and player data.
+  - **Secure authentication** for multiple users.
+- You can **customize avatars, risk types, and scoring logic** to fit your event or demo requirements.

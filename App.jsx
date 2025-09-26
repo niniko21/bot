@@ -210,16 +210,26 @@ export default function App() {
   // Onboarding UI
   if (onboarding) {
     return (
-      <div className="p-6 font-sans max-w-xl mx-auto flex flex-col items-center justify-center min-h-screen">
-        <h1 className="text-3xl font-bold mb-4">🎮 ContractRiskBot Setup</h1>
-        <form onSubmit={handleOnboardingSubmit} className="w-full flex flex-col gap-4">
+      <div
+        className="p-6 font-sans min-h-screen w-full flex items-center justify-center"
+        style={{ minHeight: '100vh', width: '100vw', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      >
+        <form
+          onSubmit={handleOnboardingSubmit}
+          className="w-full max-w-md"
+          style={{ display: 'flex', flexDirection: 'column', gap: 32, alignItems: 'center' }}
+        >
+          <h1 className="text-3xl font-bold mb-2 text-center" style={{ width: '100%' }}>🎮 ContractRiskBot Setup</h1>
           {[0,1,2].map(i => (
-            <div key={i} className="flex items-center gap-3">
+            <div
+              key={i}
+              style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 16, width: '100%' }}
+            >
               <input
                 type="text"
                 placeholder={`Player ${i+1} Name`}
                 maxLength={16}
-                className="border rounded p-2 flex-1"
+                className="border rounded p-2 flex-1 text-lg"
                 value={playerInputs[i].name}
                 onChange={e => {
                   const arr = [...playerInputs];
@@ -242,7 +252,7 @@ export default function App() {
               </select>
             </div>
           ))}
-          <button type="submit" className="btn btn-primary mt-2">Start Game</button>
+          <button type="submit" className="btn btn-primary mt-2 w-full text-lg py-2">Start Game</button>
         </form>
       </div>
     );
