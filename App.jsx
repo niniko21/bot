@@ -25,12 +25,113 @@ export default function App() {
   const [docText, setDocText] = useState("");
   const [docName, setDocName] = useState("");
   const apiKey = import.meta.env.VITE_OPENAI_API_KEY || "";
+  const elevenLabsKey = import.meta.env.VITE_ELEVENLABS_API_KEY || "";
   const [aiLoading, setAiLoading] = useState(false);
   const [aiRisks, setAiRisks] = useState([]);
   const [aiError, setAiError] = useState("");
   const [showRisks, setShowRisks] = useState(false);
   const [winner, setWinner] = useState(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [currentAudio, setCurrentAudio] = useState(null);
   const logRef = useRef();
+
+  // ElevenLabs text-to-speech function with mood settings
+  const speakText = async (text, mood = 'neutral') => {
+    if (!elevenLabsKey) {
+      console.error("ElevenLabs API key not found");
+      return;
+    }
+
+    if (!text) {
+      console.error("No text to speak");
+      return;
+    }
+
+    setIsSpeaking(true);
+    
+    try {
+      // Use the default voice (Rachel) - you can change this to other voice IDs
+      const voiceId = "21m00Tcm4TlvDq8ikWAM"; // Rachel's voice ID
+      
+      // Adjust voice settings based on mood
+      let voiceSettings = {
+        stability: 0.5,
+        similarity_boost: 0.5
+      };
+      
+      if (mood === 'cheerful') {
+        // More energetic and happy voice
+        voiceSettings = {
+          stability: 0.3,
+          similarity_boost: 0.8
+        };
+      } else if (mood === 'sad') {
+        // More empathetic and gentle voice
+        voiceSettings = {
+          stability: 0.7,
+          similarity_boost: 0.3
+        };
+      }
+      
+      const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'audio/mpeg',
+          'Content-Type': 'application/json',
+          'xi-api-key': elevenLabsKey
+        },
+        body: JSON.stringify({
+          text: text,
+          model_id: 'eleven_monolingual_v1',
+          voice_settings: voiceSettings
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      
+      // Stop any currently playing audio
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+      }
+      
+      setCurrentAudio(audio);
+      
+      audio.onended = () => {
+        setIsSpeaking(false);
+        setCurrentAudio(null);
+        URL.revokeObjectURL(audioUrl);
+      };
+      
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        setCurrentAudio(null);
+        URL.revokeObjectURL(audioUrl);
+        console.error('Error playing audio');
+      };
+      
+      await audio.play();
+    } catch (error) {
+      console.error('Error with text-to-speech:', error);
+      setIsSpeaking(false);
+    }
+  };
+
+  // Stop current speech
+  const stopSpeaking = () => {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+      setCurrentAudio(null);
+      setIsSpeaking(false);
+    }
+  };
 
   // AI-powered risk detection
   const handleDetectRisks = async () => {
@@ -124,6 +225,16 @@ export default function App() {
     }
   }, [log]);
 
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+      }
+    };
+  }, [currentAudio]);
+
   // Document upload handler
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -142,13 +253,16 @@ export default function App() {
     setDocName("Pasted Document");
   };
 
-  // Real-time scoring: only award points if selection matches AI-detected risk, based on severity
-  const handleSelectionClick = (player) => {
+  // Real-time scoring with audio feedback when button is clicked
+  const handleSelectionClick = async (player) => {
     const selection = window.getSelection().toString().trim();
     if (!selection) return alert("გთხოვთ მონიშნეთ ტექსტი ჯერ.");
+    
     let points = 0;
     let reason = "";
     let severity = "";
+    let audioMessage = "";
+    
     if (aiRisks.length > 0) {
       // Find the best match (longest overlap)
       let match = null;
@@ -161,21 +275,48 @@ export default function App() {
           }
         }
       });
+      
       if (match) {
+        // CORRECT ANSWER - Cheerful feedback
         severity = match.severity || "";
         if (severity.toLowerCase() === "high") points = 10;
         else if (severity.toLowerCase() === "medium") points = 5;
         else if (severity.toLowerCase() === "low") points = 2;
         reason = `Correct! ${match.type} (${severity})`;
+        
+        // Create simple congratulations message
+        const cheerfulMessages = [
+          `Congratulations ${player}, you identified the risk correctly!`,
+          `Well done ${player}, that's a correct risk identification!`,
+          `Great job ${player}, you found the risk!`
+        ];
+        audioMessage = cheerfulMessages[Math.floor(Math.random() * cheerfulMessages.length)];
+        
       } else {
+        // INCORRECT ANSWER - Sad feedback with explanation
         reason = "No risk detected for this selection.";
-        alert(reason);
+        
+        // Create simple feedback without revealing answers
+        const sadMessages = [
+          `Sorry ${player}, that's not a risk.`,
+          `Not quite right ${player}, try again.`,
+          `That's not it ${player}, keep looking.`
+        ];
+        audioMessage = sadMessages[Math.floor(Math.random() * sadMessages.length)];
       }
     } else {
       reason = "Please run 'Detect Risks with AI' first.";
-      alert(reason);
+      audioMessage = `Hi ${player}, please run the AI risk detection first.`;
     }
+    
     addPoints(player, points, reason, selection, severity);
+    
+    // Provide audio feedback when button is clicked
+    if (audioMessage) {
+      const mood = points > 0 ? 'cheerful' : 'sad';
+      await speakText(audioMessage, mood);
+    }
+    
     window.getSelection().removeAllRanges();
   };
 
@@ -282,8 +423,22 @@ export default function App() {
           >
             {aiLoading ? "Detecting..." : "Detect Risks with AI"}
           </button>
+          {docText && (
+            <button
+              className="btn btn-secondary"
+              onClick={isSpeaking ? stopSpeaking : () => speakText(docText, 'neutral')}
+            >
+              {isSpeaking ? "⏹️ Stop Speaking" : "🔊 Read Document"}
+            </button>
+          )}
         </div>
         {aiError && <div className="text-red-500 text-sm mt-1">{aiError}</div>}
+        {isSpeaking && (
+          <div className="text-blue-500 text-sm mt-1 flex items-center gap-2">
+            <span className="animate-pulse">🔊</span>
+            <span>Providing audio feedback...</span>
+          </div>
+        )}
       </div>
       {docText && (
         <>
